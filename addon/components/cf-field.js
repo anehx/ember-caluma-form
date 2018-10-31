@@ -1,5 +1,6 @@
 import Component from "@ember/component";
 import { computed } from "@ember/object";
+import { not } from "@ember/object/computed";
 import { inject as service } from "@ember/service";
 import { getOwner } from "@ember/application";
 import layout from "../templates/components/cf-field";
@@ -21,6 +22,7 @@ import { task, timeout } from "ember-concurrency";
 export default Component.extend({
   layout,
   classNames: ["uk-margin"],
+  classNameBindings: ["field.question.hidden:uk-hidden"],
   fieldStore: service(),
 
   /**

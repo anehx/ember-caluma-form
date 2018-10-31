@@ -1,5 +1,5 @@
 import EmberObject, { computed } from "@ember/object";
-import { equal, not } from "@ember/object/computed";
+import { equal, not, reads } from "@ember/object/computed";
 import { inject as service } from "@ember/service";
 import { assert } from "@ember/debug";
 import { getOwner } from "@ember/application";
@@ -45,6 +45,8 @@ export default EmberObject.extend({
    */
   apollo: service(),
 
+  fieldStore: service(),
+
   /**
    * The translation service
    *
@@ -89,7 +91,10 @@ export default EmberObject.extend({
    * @accessor
    */
   document: computed("_document", function() {
-    return Document.create(getOwner(this).ownerInjection(), this._document);
+    return Document.create(
+      getOwner(this).ownerInjection(),
+      Object.assign({ field: this }, this._document)
+    );
   }).readOnly(),
 
   /**
@@ -99,7 +104,10 @@ export default EmberObject.extend({
    * @accessor
    */
   question: computed("_question", function() {
-    return Question.create(getOwner(this).ownerInjection(), this._question);
+    return Question.create(
+      getOwner(this).ownerInjection(),
+      Object.assign({ field: this }, this._question)
+    );
   }).readOnly(),
 
   /**
@@ -113,12 +121,28 @@ export default EmberObject.extend({
 
     return Answer.create(
       getOwner(this).ownerInjection(),
-      this._answer || {
-        __typename,
-        [camelize(__typename.replace(/Answer$/, "Value"))]: null
-      }
+      Object.assign(
+        { field: this },
+        this._answer || {
+          __typename,
+          [camelize(__typename.replace(/Answer$/, "Value"))]: null
+        }
+      )
     );
   }).readOnly(),
+
+  _value: reads("answer.value"),
+  _hidden: reads("question.hidden"),
+
+  watchedFields: computed(
+    "fieldStore.fields.[]",
+    "question._isHiddenDependencies",
+    function() {
+      return this.fieldStore.fields.filter(field =>
+        this.question._isHiddenDependencies.includes(field.question.slug)
+      );
+    }
+  ),
 
   /**
    * Whether the field is valid.
